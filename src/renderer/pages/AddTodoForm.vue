@@ -6,7 +6,7 @@
             <input v-model="producer" type="text" name="producer" placeholder="Producteur">
             <input v-model="region" type="text" name="region" placeholder="Région">
             <input v-model="date" type="date" name="date">
-            <button type="submit">Ajouter le vin</button>
+            <button type="submit">Ajouter vin</button>
         </form>
     </div>
 </template>
