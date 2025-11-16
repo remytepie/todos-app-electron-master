@@ -32,6 +32,11 @@
       </label>
 
       <label>
+        Pays
+        <input v-model="form.pays" type="text" placeholder="France..." />
+      </label>
+
+      <label>
         Stock
         <input v-model.number="form.stock" type="number" min="0" />
       </label>
@@ -69,6 +74,15 @@
           <option v-for="e in emplacements" :key="e.id" :value="e.id">{{ e.nom }}</option>
         </select>
       </label>
+
+      <label>
+        Emplacement précis
+        <input
+          v-model="form.emplacementPrecision"
+          type="text"
+          placeholder="Rangée A · Case 1"
+        />
+      </label>
     </div>
 
     <label>
@@ -104,9 +118,11 @@ const form = reactive<VinInput & { stock: number }>({
   type: 'Rouge',
   millesime: new Date().getFullYear(),
   region: '',
+  pays: '',
   producteurId: undefined,
   fournisseurId: undefined,
   emplacementId: undefined,
+  emplacementPrecision: '',
   notes: '',
   tags: [],
   stock: 6,
@@ -135,12 +151,14 @@ const handleSubmit = () => {
     nom: '',
     millesime: new Date().getFullYear(),
     region: '',
+    pays: '',
     notes: '',
     stock: 6,
     potentielGarde: '',
     producteurId: undefined,
     fournisseurId: undefined,
     emplacementId: undefined,
+    emplacementPrecision: '',
     prixMoyen: undefined,
     tags: [],
   });

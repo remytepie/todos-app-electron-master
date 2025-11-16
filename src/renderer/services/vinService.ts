@@ -9,9 +9,11 @@ export interface Vin {
   type: VinType;
   millesime?: number;
   region?: string;
+  pays?: string;
   producteurId?: number;
   fournisseurId?: number;
   emplacementId?: number;
+  emplacementPrecision?: string;
   notes?: string;
   tags: string[];
   stock: number;
@@ -25,9 +27,11 @@ export interface VinInput {
   type: VinType;
   millesime?: number;
   region?: string;
+  pays?: string;
   producteurId?: number;
   fournisseurId?: number;
   emplacementId?: number;
+  emplacementPrecision?: string;
   notes?: string;
   tags?: string[];
   stock?: number;
@@ -42,9 +46,11 @@ const vins = ref<Vin[]>([
     type: 'Rouge',
     millesime: 2015,
     region: 'Bordeaux',
+    pays: 'France',
     producteurId: 1,
     fournisseurId: 1,
     emplacementId: 1,
+    emplacementPrecision: 'Rangée A · Case 1',
     notes: 'Grand cru classé, à sortir pour les grandes occasions.',
     tags: ['Grand Cru', 'Collection'],
     stock: 12,
@@ -58,9 +64,11 @@ const vins = ref<Vin[]>([
     type: 'Blanc',
     millesime: 2018,
     region: 'Bourgogne',
+    pays: 'France',
     producteurId: 2,
     fournisseurId: 2,
     emplacementId: 2,
+    emplacementPrecision: 'Colonne 2 · Niveau supérieur',
     notes: 'Très belle tension, parfait sur un poisson noble.',
     tags: ['Gastronomie'],
     stock: 9,
@@ -79,10 +87,12 @@ function mapTodoToVin(todo: Todo): Vin {
     nom: todo.title,
     type: 'Rouge',
     region: todo.region ?? undefined,
+    pays: undefined,
     notes: todo.description ?? undefined,
     producteurId: undefined,
     fournisseurId: undefined,
     emplacementId: undefined,
+    emplacementPrecision: undefined,
     tags: todo.tags ?? [],
     stock: todo.isFinished ? 0 : 6,
     prixMoyen: undefined,
@@ -120,9 +130,11 @@ function buildVin(payload: VinInput): Vin {
     type: payload.type,
     millesime: payload.millesime,
     region: payload.region?.trim() || undefined,
+    pays: payload.pays?.trim() || undefined,
     producteurId: payload.producteurId,
     fournisseurId: payload.fournisseurId,
     emplacementId: payload.emplacementId,
+    emplacementPrecision: payload.emplacementPrecision?.trim() || undefined,
     notes: payload.notes?.trim() || undefined,
     tags: payload.tags?.map((tag) => tag.trim()).filter(Boolean) ?? [],
     stock: Math.max(0, payload.stock ?? 0),
@@ -194,3 +206,89 @@ export function useVinStore() {
 }
 
 export { adjustStock as adjustVinStock, getVinByIdRaw };
+
+const MATURITY_DEFAULT_WINDOWS: Record<VinType, { startOffset: number; endOffset: number }> = {
+  Rouge: { startOffset: 4, endOffset: 15 },
+  Blanc: { startOffset: 2, endOffset: 8 },
+  Rosé: { startOffset: 0, endOffset: 3 },
+  Effervescent: { startOffset: 3, endOffset: 10 },
+  Liquoreux: { startOffset: 3, endOffset: 12 },
+  Autre: { startOffset: 1, endOffset: 6 },
+};
+
+export type MaturityLevel = 'upcoming' | 'optimal' | 'late';
+
+export interface MaturityStatus {
+  label: string;
+  detail: string;
+  level: MaturityLevel;
+  window?: string;
+}
+
+function parsePotentielRange(value?: string): { start: number; end: number } | null {
+  if (!value) return null;
+
+  const matches = value.match(/\d{4}/g);
+  if (!matches?.length) {
+    return null;
+  }
+
+  const years = matches.map(Number).sort((a, b) => a - b);
+  const start = years[0];
+  let end = years[years.length - 1];
+
+  if (value.includes('+') && years.length === 1) {
+    end = start + 10;
+  }
+
+  return { start, end };
+}
+
+export function getMaturityStatus(vin: Vin): MaturityStatus {
+  const currentYear = new Date().getFullYear();
+  const potentielRange = parsePotentielRange(vin.potentielGarde);
+
+  let rangeStart: number;
+  let rangeEnd: number;
+
+  if (potentielRange) {
+    rangeStart = potentielRange.start;
+    rangeEnd = potentielRange.end;
+  } else {
+    const { startOffset, endOffset } = MATURITY_DEFAULT_WINDOWS[vin.type] ?? MATURITY_DEFAULT_WINDOWS.Autre;
+    const baseYear = vin.millesime ?? currentYear;
+    rangeStart = baseYear + startOffset;
+    rangeEnd = baseYear + endOffset;
+  }
+
+  if (rangeEnd < rangeStart) {
+    rangeEnd = rangeStart;
+  }
+
+  const windowLabel = `${rangeStart} - ${rangeEnd}`;
+
+  if (currentYear < rangeStart) {
+    return {
+      label: 'À attendre',
+      detail: `Fenêtre estimée ${windowLabel}`,
+      level: 'upcoming',
+      window: windowLabel,
+    };
+  }
+
+  if (currentYear <= rangeEnd) {
+    return {
+      label: 'Fenêtre optimale',
+      detail: `Fenêtre estimée ${windowLabel}`,
+      level: 'optimal',
+      window: windowLabel,
+    };
+  }
+
+  return {
+    label: 'Dernières bouteilles',
+    detail: `Fenêtre estimée ${windowLabel}`,
+    level: 'late',
+    window: windowLabel,
+  };
+}

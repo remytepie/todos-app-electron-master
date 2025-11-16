@@ -4,10 +4,15 @@
       <div>
         <p class="vin-card__type">{{ vin.type }} • {{ vin.millesime ?? 'N/A' }}</p>
         <h3>{{ vin.nom }}</h3>
-        <p v-if="vin.region" class="vin-card__region">{{ vin.region }}</p>
+        <p v-if="regionLabel" class="vin-card__region">{{ regionLabel }}</p>
       </div>
       <button class="vin-card__action" @click="$emit('open', vin)">Détails</button>
     </header>
+
+    <p class="vin-card__maturity" :class="`vin-card__maturity--${maturityStatus.level}`">
+      {{ maturityStatus.label }}
+      <small>{{ maturityStatus.detail }}</small>
+    </p>
 
     <p v-if="vin.notes" class="vin-card__notes">{{ vin.notes }}</p>
 
@@ -19,6 +24,10 @@
       <div>
         <dt>Potentiel</dt>
         <dd>{{ vin.potentielGarde ?? 'À définir' }}</dd>
+      </div>
+      <div>
+        <dt>Emplacement</dt>
+        <dd>{{ emplacementLabel }}</dd>
       </div>
       <div>
         <dt>Dernière mise à jour</dt>
@@ -35,6 +44,8 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import type { Vin } from '../../services/vinService';
+import { getMaturityStatus } from '../../services/vinService';
+import { useEmplacementService } from '../../services/emplacementService';
 
 const props = defineProps<{
   vin: Vin;
@@ -44,10 +55,40 @@ defineEmits<{
   open: [vin: Vin];
 }>();
 
+const { emplacements } = useEmplacementService();
+const maturityStatus = computed(() => getMaturityStatus(props.vin));
+
 const stockStatus = computed(() => {
   if (props.vin.stock === 0) return 'vin-card__stock--empty';
   if (props.vin.stock < 6) return 'vin-card__stock--low';
   return 'vin-card__stock--ok';
+});
+
+const regionLabel = computed(() => {
+  if (!props.vin.region && !props.vin.pays) {
+    return '';
+  }
+  if (props.vin.region && props.vin.pays) {
+    return `${props.vin.region}, ${props.vin.pays}`;
+  }
+  return props.vin.region ?? props.vin.pays ?? '';
+});
+
+const emplacementLabel = computed(() => {
+  const base =
+    props.vin.emplacementId !== undefined
+      ? emplacements.value.find((e) => e.id === props.vin.emplacementId)?.nom ?? '—'
+      : '—';
+
+  if (!props.vin.emplacementPrecision) {
+    return base;
+  }
+
+  if (base === '—') {
+    return props.vin.emplacementPrecision;
+  }
+
+  return `${base} · ${props.vin.emplacementPrecision}`;
 });
 
 const formatDate = (value: string) =>
@@ -105,6 +146,33 @@ h3 {
   background: rgba(148, 163, 184, 0.15);
 }
 
+.vin-card__maturity {
+  margin: 0;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.9rem;
+}
+
+.vin-card__maturity small {
+  font-weight: 400;
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+.vin-card__maturity--upcoming {
+  color: #fbbf24;
+}
+
+.vin-card__maturity--optimal {
+  color: #34d399;
+}
+
+.vin-card__maturity--late {
+  color: #f87171;
+}
+
 .vin-card__notes {
   color: #cbd5f5;
   margin: 0;
@@ -112,7 +180,7 @@ h3 {
 
 .vin-card__stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 0.5rem;
 }
 

@@ -4,7 +4,7 @@
       <div>
         <p class="vin-details__eyebrow">{{ vin.type }} • {{ vin.millesime ?? 'N/A' }}</p>
         <h1>{{ vin.nom }}</h1>
-        <p class="vin-details__region">{{ vin.region ?? 'Région non renseignée' }}</p>
+        <p class="vin-details__region">{{ regionHeaderLabel }}</p>
       </div>
       <div class="vin-details__stock">
         <span>{{ vin.stock }}</span>
@@ -26,7 +26,29 @@
           </div>
           <div>
             <dt>Emplacement</dt>
-            <dd>{{ emplacementName }}</dd>
+            <dd>{{ emplacementLabel }}</dd>
+          </div>
+          <div>
+            <dt>Maturit�</dt>
+            <dd class="vin-details__maturity">
+              <span
+                :class="[
+                  'vin-details__maturity-pill',
+                  `vin-details__maturity-pill--${maturityStatus.level}`,
+                ]"
+              >
+                {{ maturityStatus.label }}
+              </span>
+              <small v-if="maturityStatus.detail">{{ maturityStatus.detail }}</small>
+            </dd>
+          </div>
+          <div>
+            <dt>Région</dt>
+            <dd>{{ regionFieldLabel }}</dd>
+          </div>
+          <div>
+            <dt>Pays</dt>
+            <dd>{{ countryLabel }}</dd>
           </div>
           <div>
             <dt>Potentiel de garde</dt>
@@ -62,10 +84,10 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 import type { Vin } from '../../services/vinService';
+import { getMaturityStatus, type MaturityStatus } from '../../services/vinService';
 import { useFournisseurService } from '../../services/fournisseurService';
 import { useProducteurService } from '../../services/producteurService';
 import { useEmplacementService } from '../../services/emplacementService';
-import { RouterLink } from 'vue-router';
 
 const props = defineProps<{
   vin?: Vin;
@@ -74,6 +96,15 @@ const props = defineProps<{
 const { fournisseurs } = useFournisseurService();
 const { producteurs } = useProducteurService();
 const { emplacements } = useEmplacementService();
+const maturityStatus = computed<MaturityStatus>(() =>
+  props.vin
+    ? getMaturityStatus(props.vin)
+    : {
+        label: 'N/A',
+        detail: '',
+        level: 'upcoming',
+      },
+);
 
 const fournisseurName = computed(() => {
   if (!props.vin?.fournisseurId) return '—';
@@ -85,9 +116,35 @@ const producteurName = computed(() => {
   return producteurs.value.find((p) => p.id === props.vin?.producteurId)?.nom ?? '—';
 });
 
-const emplacementName = computed(() => {
-  if (!props.vin?.emplacementId) return '—';
-  return emplacements.value.find((e) => e.id === props.vin?.emplacementId)?.nom ?? '—';
+const regionHeaderLabel = computed(() => {
+  if (!props.vin?.region && !props.vin?.pays) {
+    return 'Région non renseignée';
+  }
+
+  if (props.vin?.region && props.vin?.pays) {
+    return `${props.vin.region}, ${props.vin.pays}`;
+  }
+
+  return props.vin?.region ?? props.vin?.pays ?? 'Région non renseignée';
+});
+
+const regionFieldLabel = computed(() => props.vin?.region ?? 'N/A');
+const countryLabel = computed(() => props.vin?.pays ?? 'N/A');
+
+const emplacementLabel = computed(() => {
+  const base = props.vin?.emplacementId
+    ? emplacements.value.find((e) => e.id === props.vin?.emplacementId)?.nom ?? 'N/A'
+    : 'N/A';
+
+  if (!props.vin?.emplacementPrecision) {
+    return base;
+  }
+
+  if (base === 'N/A') {
+    return props.vin.emplacementPrecision;
+  }
+
+  return `${base} · ${props.vin.emplacementPrecision}`;
 });
 
 const formatDate = (value: string) =>
@@ -169,6 +226,43 @@ dd {
   font-weight: 600;
 }
 
+.vin-details__maturity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.vin-details__maturity small {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.vin-details__maturity-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  padding: 0.2rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.vin-details__maturity-pill--upcoming {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+}
+
+.vin-details__maturity-pill--optimal {
+  background: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+}
+
+.vin-details__maturity-pill--late {
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
+}
+
 .vin-details__muted {
   color: #64748b;
 }
@@ -196,3 +290,4 @@ dd {
   border: 1px dashed #1e293b;
 }
 </style>
+

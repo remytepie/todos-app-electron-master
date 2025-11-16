@@ -57,6 +57,7 @@ const filteredVins = computed(() => {
       !normalizedSearch ||
       vin.nom.toLowerCase().includes(normalizedSearch) ||
       (vin.region?.toLowerCase().includes(normalizedSearch) ?? false) ||
+      (vin.pays?.toLowerCase().includes(normalizedSearch) ?? false) ||
       (vin.notes?.toLowerCase().includes(normalizedSearch) ?? false);
 
     const matchType = !typeFilter.value || vin.type === typeFilter.value;
