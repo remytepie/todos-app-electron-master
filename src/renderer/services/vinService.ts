@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue';
 import { VinRecord, VinTypeDb } from 'src/shared/vin';
 
-export type VinType = 'Rouge' | 'Blanc' | 'Rosé' | 'Effervescent' | 'Liquoreux' | 'Autre';
+export type VinType = 'Rouge' | 'Blanc' | 'Rose' | 'Effervescent' | 'Liquoreux' | 'Autre';
 
 export interface Vin {
   id: number;
@@ -37,53 +37,26 @@ export interface VinInput {
   potentielGarde?: string;
 }
 
-const vins = ref<Vin[]>([
-  {
-    id: 1,
-    nom: 'Château Margaux',
-    type: 'Rouge',
-    millesime: 2015,
-    region: 'Bordeaux',
-    pays: 'France',
-    fournisseurId: 1,
-    emplacementId: 1,
-    emplacementPrecision: 'Rangée A · Case 1',
-    notes: 'Grand cru classé, à sortir pour les grandes occasions.',
-    tags: ['Grand Cru', 'Collection'],
-    stock: 12,
-    prixMoyen: 680,
-    potentielGarde: '2035+',
-    derniereMiseAJour: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    nom: 'Meursault Les Charmes',
-    type: 'Blanc',
-    millesime: 2018,
-    region: 'Bourgogne',
-    pays: 'France',
-    fournisseurId: 2,
-    emplacementId: 2,
-    emplacementPrecision: 'Colonne 2 · Niveau supérieur',
-    notes: 'Très belle tension, parfait sur un poisson noble.',
-    tags: ['Gastronomie'],
-    stock: 9,
-    prixMoyen: 120,
-    potentielGarde: '2028',
-    derniereMiseAJour: new Date().toISOString(),
-  },
-]);
-
-let nextVinId = vins.value.length + 1;
+const vins = ref<Vin[]>([]);
+let nextVinId = 1;
 let hasSyncedWithElectron = false;
 
 const vinTypeMap: Record<VinTypeDb, VinType> = {
   ROUGE: 'Rouge',
   BLANC: 'Blanc',
-  ROSE: 'RosǸ',
+  ROSE: 'Rose',
   EFFERVESCENT: 'Effervescent',
   LIQUOREUX: 'Liquoreux',
   AUTRE: 'Autre',
+};
+
+const invertVinTypeMap: Record<VinType, VinTypeDb> = {
+  Rouge: 'ROUGE',
+  Blanc: 'BLANC',
+  Rose: 'ROSE',
+  Effervescent: 'EFFERVESCENT',
+  Liquoreux: 'LIQUOREUX',
+  Autre: 'AUTRE',
 };
 
 function mapVinRecordToVin(record: VinRecord): Vin {
@@ -117,26 +90,47 @@ async function hydrateFromElectron() {
   }
 
   const remoteVins = await window.electronService.vins.getVins();
-  if (!remoteVins.length) {
-    hasSyncedWithElectron = true;
-    return;
-  }
-
   vins.value = remoteVins.map(mapVinRecordToVin);
-  nextVinId = Math.max(...vins.value.map((v) => v.id)) + 1;
+  nextVinId = vins.value.length ? Math.max(...vins.value.map((v) => v.id)) + 1 : 1;
   hasSyncedWithElectron = true;
 }
 
-function buildVin(payload: VinInput): Vin {
-  return {
+async function addVin(payload: VinInput) {
+  if (typeof window !== 'undefined' && window.electronService?.vins) {
+    try {
+      const created = await window.electronService.vins.addVin({
+        nom: payload.nom.trim(),
+        type: invertVinTypeMap[payload.type] ?? 'AUTRE',
+        millesime: payload.millesime ?? null,
+        region: payload.region?.trim() || null,
+        pays: payload.pays?.trim() || null,
+        producteurId: null,
+        fournisseurId: payload.fournisseurId ?? null,
+        emplacementId: payload.emplacementId ?? null,
+        emplacementPrecision: payload.emplacementPrecision?.trim() || null,
+        notes: payload.notes?.trim() || null,
+        stock: Math.max(0, payload.stock ?? 0),
+        prixMoyen: payload.prixMoyen ?? null,
+        potentielGarde: payload.potentielGarde?.trim() || null,
+        tags: payload.tags?.map((tag) => tag.trim()).filter(Boolean) ?? [],
+      });
+      const vin = mapVinRecordToVin(created);
+      vins.value = [vin, ...vins.value];
+      return vin;
+    } catch (err) {
+      console.error('addVin failed', err);
+    }
+  }
+
+  const fallback: Vin = {
     id: nextVinId++,
     nom: payload.nom.trim(),
-  type: payload.type,
-  millesime: payload.millesime,
-  region: payload.region?.trim() || undefined,
-  pays: payload.pays?.trim() || undefined,
-  fournisseurId: payload.fournisseurId,
-  emplacementId: payload.emplacementId,
+    type: payload.type,
+    millesime: payload.millesime,
+    region: payload.region?.trim() || undefined,
+    pays: payload.pays?.trim() || undefined,
+    fournisseurId: payload.fournisseurId,
+    emplacementId: payload.emplacementId,
     emplacementPrecision: payload.emplacementPrecision?.trim() || undefined,
     notes: payload.notes?.trim() || undefined,
     tags: payload.tags?.map((tag) => tag.trim()).filter(Boolean) ?? [],
@@ -145,29 +139,59 @@ function buildVin(payload: VinInput): Vin {
     potentielGarde: payload.potentielGarde?.trim() || undefined,
     derniereMiseAJour: new Date().toISOString(),
   };
+  vins.value = [fallback, ...vins.value];
+  return fallback;
 }
 
-function addVin(payload: VinInput) {
-  const vin = buildVin(payload);
-  vins.value = [vin, ...vins.value];
-  return vin;
-}
+async function updateVin(id: number, updates: Partial<Vin>) {
+  if (typeof window !== 'undefined' && window.electronService?.vins) {
+    try {
+      const updatedRecord = await window.electronService.vins.updateVin(id, {
+        nom: updates.nom,
+        type: updates.type ? invertVinTypeMap[updates.type] ?? 'AUTRE' : undefined,
+        millesime: updates.millesime ?? null,
+        region: updates.region ?? null,
+        pays: updates.pays ?? null,
+        producteurId: undefined,
+        fournisseurId: updates.fournisseurId ?? null,
+        emplacementId: updates.emplacementId ?? null,
+        emplacementPrecision: updates.emplacementPrecision ?? null,
+        notes: updates.notes ?? null,
+        stock: updates.stock,
+        prixMoyen: updates.prixMoyen ?? null,
+        potentielGarde: updates.potentielGarde ?? null,
+        tags: updates.tags,
+      });
+      const vin = mapVinRecordToVin(updatedRecord);
+      const idx = vins.value.findIndex((v) => v.id === id);
+      if (idx >= 0) {
+        vins.value.splice(idx, 1, vin);
+      }
+      return vin;
+    } catch (err) {
+      console.error('updateVin failed', err);
+    }
+  }
 
-function updateVin(id: number, updates: Partial<Vin>) {
   const index = vins.value.findIndex((vin) => vin.id === id);
   if (index === -1) return null;
-
   const updated: Vin = {
     ...vins.value[index],
     ...updates,
     derniereMiseAJour: new Date().toISOString(),
   };
-
   vins.value.splice(index, 1, updated);
   return updated;
 }
 
-function deleteVin(id: number) {
+async function deleteVin(id: number) {
+  if (typeof window !== 'undefined' && window.electronService?.vins) {
+    try {
+      await window.electronService.vins.deleteVin(id);
+    } catch (err) {
+      console.error('deleteVin failed', err);
+    }
+  }
   const initialLength = vins.value.length;
   vins.value = vins.value.filter((vin) => vin.id !== id);
   return vins.value.length < initialLength;
@@ -220,7 +244,7 @@ export { adjustStock as adjustVinStock, getVinByIdRaw };
 const MATURITY_DEFAULT_WINDOWS: Record<VinType, { startOffset: number; endOffset: number }> = {
   Rouge: { startOffset: 4, endOffset: 15 },
   Blanc: { startOffset: 2, endOffset: 8 },
-  Rosé: { startOffset: 0, endOffset: 3 },
+  Rose: { startOffset: 0, endOffset: 3 },
   Effervescent: { startOffset: 3, endOffset: 10 },
   Liquoreux: { startOffset: 3, endOffset: 12 },
   Autre: { startOffset: 1, endOffset: 6 },
@@ -233,6 +257,16 @@ export interface MaturityStatus {
   detail: string;
   level: MaturityLevel;
   window?: string;
+}
+
+function parseGuardYears(value?: string): number | null {
+  if (!value) return null;
+  const match = value.match(/\d+/);
+  if (!match) return null;
+  if (/an/i.test(value) || /ans/i.test(value)) {
+    return Number(match[0]);
+  }
+  return null;
 }
 
 function parsePotentielRange(value?: string): { start: number; end: number } | null {
@@ -256,12 +290,16 @@ function parsePotentielRange(value?: string): { start: number; end: number } | n
 
 export function getMaturityStatus(vin: Vin): MaturityStatus {
   const currentYear = new Date().getFullYear();
-  const potentielRange = parsePotentielRange(vin.potentielGarde);
+  const guardYears = parseGuardYears(vin.potentielGarde);
+  const potentielRange = guardYears ? null : parsePotentielRange(vin.potentielGarde);
 
   let rangeStart: number;
   let rangeEnd: number;
 
-  if (potentielRange) {
+  if (guardYears) {
+    rangeStart = (vin.millesime ?? currentYear) + guardYears;
+    rangeEnd = rangeStart;
+  } else if (potentielRange) {
     rangeStart = potentielRange.start;
     rangeEnd = potentielRange.end;
   } else {
@@ -279,8 +317,8 @@ export function getMaturityStatus(vin: Vin): MaturityStatus {
 
   if (currentYear < rangeStart) {
     return {
-      label: 'À attendre',
-      detail: `Fenêtre estimée ${windowLabel}`,
+      label: 'A attendre',
+      detail: `Fenetre estimee ${windowLabel}`,
       level: 'upcoming',
       window: windowLabel,
     };
@@ -288,16 +326,16 @@ export function getMaturityStatus(vin: Vin): MaturityStatus {
 
   if (currentYear <= rangeEnd) {
     return {
-      label: 'Fenêtre optimale',
-      detail: `Fenêtre estimée ${windowLabel}`,
+      label: 'Fenetre optimale',
+      detail: `Fenetre estimee ${windowLabel}`,
       level: 'optimal',
       window: windowLabel,
     };
   }
 
   return {
-    label: 'Dernières bouteilles',
-    detail: `Fenêtre estimée ${windowLabel}`,
+    label: 'Dernieres bouteilles',
+    detail: `Fenetre estimee ${windowLabel}`,
     level: 'late',
     window: windowLabel,
   };

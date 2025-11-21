@@ -5,17 +5,17 @@
         <p class="vin-form__eyebrow">Nouvelle entrée</p>
         <h2>Ajouter un vin</h2>
       </div>
-      <button type="submit">Enregistrer</button>
+        <button type="submit">Enregistrer</button>
     </header>
 
     <div class="vin-form__grid">
       <label>
         Nom du vin *
-        <input v-model="form.nom" type="text" placeholder="Château..." required />
+        <input v-model="form.nom" type="text" placeholder="Chateau..." required />
       </label>
 
       <label>
-        Millésime
+        Millesime
         <input v-model.number="form.millesime" type="number" min="1900" max="2100" />
       </label>
 
@@ -27,7 +27,7 @@
       </label>
 
       <label>
-        Région
+        Region
         <input v-model="form.region" type="text" placeholder="Bourgogne..." />
       </label>
 
@@ -42,8 +42,12 @@
       </label>
 
       <label>
-        Potentiel de garde
-        <input v-model="form.potentielGarde" type="text" placeholder="2028-2035" />
+        Potentiel de garde (annees)
+        <select v-model.number="form.potentielGardeYears">
+          <option v-for="years in potentielOptions" :key="years" :value="years">
+            {{ years }} ans
+          </option>
+        </select>
       </label>
 
       <label>
@@ -54,7 +58,7 @@
       <label>
         Fournisseur
         <select v-model.number="form.fournisseurId">
-          <option :value="undefined">Non spécifié</option>
+          <option :value="undefined">Non specifie</option>
           <option v-for="f in fournisseurs" :key="f.id" :value="f.id">{{ f.nom }}</option>
         </select>
       </label>
@@ -62,29 +66,25 @@
       <label>
         Emplacement
         <select v-model.number="form.emplacementId">
-          <option :value="undefined">Non spécifié</option>
+          <option :value="undefined">Non specifie</option>
           <option v-for="e in emplacements" :key="e.id" :value="e.id">{{ e.nom }}</option>
         </select>
       </label>
 
       <label>
-        Emplacement précis
-        <input
-          v-model="form.emplacementPrecision"
-          type="text"
-          placeholder="Rangée A · Case 1"
-        />
+        Emplacement precis
+        <input v-model="form.emplacementPrecision" type="text" placeholder="Rangee A - Case 1" />
       </label>
     </div>
 
     <label>
       Notes
-      <textarea v-model="form.notes" rows="3" placeholder="Commentaires de dégustation ou instructions"></textarea>
+      <textarea v-model="form.notes" rows="3" placeholder="Commentaires ou instructions"></textarea>
     </label>
 
     <label>
-      Tags (séparés par des virgules)
-      <input v-model="tagsInput" type="text" placeholder="Grand cru, À surveiller..." />
+      Tags (separes par des virgules)
+      <input v-model="tagsInput" type="text" placeholder="Grand cru, A surveiller..." />
     </label>
 
     <p v-if="feedback" class="vin-form__feedback">{{ feedback }}</p>
@@ -101,9 +101,10 @@ const { addVin } = useVinStore();
 const { fournisseurs } = useFournisseurService();
 const { emplacements } = useEmplacementService();
 
-const vinTypes: VinType[] = ['Rouge', 'Blanc', 'Rosé', 'Effervescent', 'Liquoreux', 'Autre'];
+const vinTypes: VinType[] = ['Rouge', 'Blanc', 'Rose', 'Effervescent', 'Liquoreux', 'Autre'];
+const potentielOptions = [2, 4, 6, 8, 10, 12, 15, 20, 25];
 
-const form = reactive<VinInput & { stock: number }>({
+const form = reactive<VinInput & { stock: number; potentielGardeYears: number }>({
   nom: '',
   type: 'Rouge',
   millesime: new Date().getFullYear(),
@@ -116,7 +117,7 @@ const form = reactive<VinInput & { stock: number }>({
   tags: [],
   stock: 6,
   prixMoyen: undefined,
-  potentielGarde: '',
+  potentielGardeYears: 6,
 });
 
 const tagsInput = ref('');
@@ -132,9 +133,10 @@ const handleSubmit = () => {
     ...form,
     tags,
     stock: form.stock,
+    potentielGarde: `${form.potentielGardeYears} ans`,
   });
 
-  feedback.value = 'Vin ajouté avec succès 🎉';
+  feedback.value = 'Vin ajoute avec succes';
 
   Object.assign(form, {
     nom: '',
@@ -143,7 +145,7 @@ const handleSubmit = () => {
     pays: '',
     notes: '',
     stock: 6,
-    potentielGarde: '',
+    potentielGardeYears: 6,
     fournisseurId: undefined,
     emplacementId: undefined,
     emplacementPrecision: '',
@@ -228,5 +230,3 @@ textarea {
   color: #34d399;
 }
 </style>
-
-
