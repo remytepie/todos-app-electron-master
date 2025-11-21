@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue';
-import Todo from 'src/shared/todo';
+import { VinRecord, VinTypeDb } from 'src/shared/vin';
 
 export type VinType = 'Rouge' | 'Blanc' | 'Rosé' | 'Effervescent' | 'Liquoreux' | 'Autre';
 
@@ -77,43 +77,52 @@ const vins = ref<Vin[]>([
 let nextVinId = vins.value.length + 1;
 let hasSyncedWithElectron = false;
 
-function mapTodoToVin(todo: Todo): Vin {
+const vinTypeMap: Record<VinTypeDb, VinType> = {
+  ROUGE: 'Rouge',
+  BLANC: 'Blanc',
+  ROSE: 'RosǸ',
+  EFFERVESCENT: 'Effervescent',
+  LIQUOREUX: 'Liquoreux',
+  AUTRE: 'Autre',
+};
+
+function mapVinRecordToVin(record: VinRecord): Vin {
   return {
-    id: todo.id ?? nextVinId++,
-    nom: todo.title,
-  type: 'Rouge',
-  region: todo.region ?? undefined,
-  pays: undefined,
-  notes: todo.description ?? undefined,
-  fournisseurId: undefined,
-  emplacementId: undefined,
-  emplacementPrecision: undefined,
-    tags: todo.tags ?? [],
-    stock: todo.isFinished ? 0 : 6,
-    prixMoyen: undefined,
-    potentielGarde: undefined,
-    millesime: todo.dateLimite ? new Date(todo.dateLimite).getFullYear() : undefined,
-    derniereMiseAJour: new Date().toISOString(),
+    id: record.id,
+    nom: record.nom,
+    type: vinTypeMap[record.type] ?? 'Autre',
+    millesime: record.millesime ?? undefined,
+    region: record.region ?? undefined,
+    pays: record.pays ?? undefined,
+    fournisseurId: record.fournisseurId ?? undefined,
+    emplacementId: record.emplacementId ?? undefined,
+    emplacementPrecision: record.emplacementPrecision ?? undefined,
+    notes: record.notes ?? undefined,
+    tags: record.tags ?? [],
+    stock: record.stock ?? 0,
+    prixMoyen: record.prixMoyen ?? undefined,
+    potentielGarde: record.potentielGarde ?? undefined,
+    derniereMiseAJour: record.derniereMiseAJour ?? new Date().toISOString(),
   };
 }
 
-async function hydrateFromElectronTodos() {
+async function hydrateFromElectron() {
   if (typeof window === 'undefined') {
     hasSyncedWithElectron = true;
     return;
   }
 
-  if (hasSyncedWithElectron || !window.electronService || !window.electronService.todos) {
+  if (hasSyncedWithElectron || !window.electronService || !window.electronService.vins) {
     return;
   }
 
-  const todos = await window.electronService.todos.getTodos();
-  if (!todos.length) {
+  const remoteVins = await window.electronService.vins.getVins();
+  if (!remoteVins.length) {
     hasSyncedWithElectron = true;
     return;
   }
 
-  vins.value = todos.map(mapTodoToVin);
+  vins.value = remoteVins.map(mapVinRecordToVin);
   nextVinId = Math.max(...vins.value.map((v) => v.id)) + 1;
   hasSyncedWithElectron = true;
 }
@@ -197,7 +206,7 @@ export function useVinStore() {
     vins,
     totalBottles,
     typeDistribution,
-    fetchVins: hydrateFromElectronTodos,
+    fetchVins: hydrateFromElectron,
     addVin,
     updateVin,
     deleteVin,

@@ -1,6 +1,6 @@
-import { registerTodoRepository } from "./repositories/registerTodoRepository";
+import { registerVinRepository } from "./repositories/registerVinRepository";
 
 export function registerRepositories()
 {
-    registerTodoRepository();
+    registerVinRepository();
 }
