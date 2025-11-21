@@ -5,6 +5,13 @@
     </button>
     <VinDetails :vin="vin" />
 
+    <div v-if="vin && isAdmin" class="vin-details-page__actions">
+      <button type="button" class="vin-details-page__delete" @click="handleDeleteVin" :disabled="isDeleting">
+        {{ isDeleting ? 'Suppression…' : 'Supprimer ce vin' }}
+      </button>
+      <span v-if="deleteFeedback" class="vin-details-page__delete-feedback">{{ deleteFeedback }}</span>
+    </div>
+
     <form
       v-if="vin && isAdmin"
       class="vin-details-page__general"
@@ -44,15 +51,6 @@
         <label>
           Pays
           <input v-model="generalForm.pays" type="text" placeholder="France..." />
-        </label>
-        <label>
-          Producteur
-          <select v-model="selectedProducteurId">
-            <option value="">Non spécifié</option>
-            <option v-for="producteur in producteurs" :key="producteur.id" :value="producteur.id">
-              {{ producteur.nom }}
-            </option>
-          </select>
         </label>
         <label>
           Fournisseur
@@ -146,14 +144,14 @@ import { useVinStore, type VinType } from '../services/vinService';
 import { useAuth } from '../services/authService';
 import { useEmplacementService } from '../services/emplacementService';
 import { useFournisseurService } from '../services/fournisseurService';
-import { useProducteurService } from '../services/producteurService';
+import { useMouvementService } from '../services/mouvementService';
 
 const route = useRoute();
 const router = useRouter();
-const { vins, fetchVins, updateVin } = useVinStore();
+const { vins, fetchVins, updateVin, deleteVin } = useVinStore();
 const { emplacements } = useEmplacementService();
 const { fournisseurs } = useFournisseurService();
-const { producteurs } = useProducteurService();
+const { removeMouvementsForVin } = useMouvementService();
 
 const vinId = computed(() => Number(route.params.id));
 const vin = computed(() => vins.value.find((value) => value.id === vinId.value));
@@ -167,22 +165,10 @@ const generalForm = reactive({
   millesime: undefined as number | undefined,
   region: '',
   pays: '',
-  producteurId: undefined as number | undefined,
   fournisseurId: undefined as number | undefined,
   potentielGarde: '',
   prixMoyen: undefined as number | undefined,
   notes: '',
-});
-
-const selectedProducteurId = computed({
-  get: () => generalForm.producteurId ?? '',
-  set: (value: string | number) => {
-    if (value === '' || value === undefined) {
-      generalForm.producteurId = undefined;
-      return;
-    }
-    generalForm.producteurId = typeof value === 'number' ? value : Number(value);
-  },
 });
 
 const selectedFournisseurId = computed({
@@ -220,6 +206,8 @@ const locationFeedback = ref('');
 const isUpdatingLocation = ref(false);
 const generalFeedback = ref('');
 const isUpdatingGeneral = ref(false);
+const isDeleting = ref(false);
+const deleteFeedback = ref('');
 
 watch(
   vin,
@@ -238,7 +226,6 @@ watch(
     generalForm.millesime = current?.millesime;
     generalForm.region = current?.region ?? '';
     generalForm.pays = current?.pays ?? '';
-    generalForm.producteurId = current?.producteurId;
     generalForm.fournisseurId = current?.fournisseurId;
     generalForm.potentielGarde = current?.potentielGarde ?? '';
     generalForm.prixMoyen = current?.prixMoyen;
@@ -278,7 +265,6 @@ const handleGeneralUpdate = () => {
     millesime: normalizedMillesime,
     region: generalForm.region.trim() || undefined,
     pays: generalForm.pays.trim() || undefined,
-    producteurId: generalForm.producteurId,
     fournisseurId: generalForm.fournisseurId,
     potentielGarde: generalForm.potentielGarde.trim() || undefined,
     prixMoyen: normalizedPrix,
@@ -295,6 +281,19 @@ const goBack = () => {
     return;
   }
 
+  router.push('/vins');
+};
+
+const handleDeleteVin = () => {
+  if (!vin.value) return;
+  const confirmed = window.confirm(`Supprimer "${vin.value.nom}" ? Cette action retirera aussi ses mouvements.`);
+  if (!confirmed) return;
+
+  isDeleting.value = true;
+  removeMouvementsForVin(vin.value.id);
+  deleteVin(vin.value.id);
+  deleteFeedback.value = 'Vin supprimé';
+  setTimeout(() => (deleteFeedback.value = ''), 2000);
   router.push('/vins');
 };
 
@@ -398,6 +397,32 @@ onMounted(fetchVins);
   resize: vertical;
 }
 
+.vin-details-page__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.vin-details-page__delete {
+  border: none;
+  border-radius: 9999px;
+  padding: 0.45rem 1.2rem;
+  background: linear-gradient(120deg, #ef4444, #f97316);
+  color: white;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.vin-details-page__delete:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.vin-details-page__delete-feedback {
+  color: #fca5a5;
+  font-size: 0.9rem;
+}
+
 .vin-details-page__general-feedback {
   color: #34d399;
   font-size: 0.9rem;
@@ -451,3 +476,5 @@ onMounted(fetchVins);
   border-radius: 1rem;
 }
 </style>
+
+

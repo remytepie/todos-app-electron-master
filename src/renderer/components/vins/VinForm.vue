@@ -60,14 +60,6 @@
       </label>
 
       <label>
-        Producteur
-        <select v-model.number="form.producteurId">
-          <option :value="undefined">Non spécifié</option>
-          <option v-for="p in producteurs" :key="p.id" :value="p.id">{{ p.nom }}</option>
-        </select>
-      </label>
-
-      <label>
         Emplacement
         <select v-model.number="form.emplacementId">
           <option :value="undefined">Non spécifié</option>
@@ -103,12 +95,10 @@
 import { reactive, ref } from 'vue';
 import { useVinStore, type VinInput, type VinType } from '../../services/vinService';
 import { useFournisseurService } from '../../services/fournisseurService';
-import { useProducteurService } from '../../services/producteurService';
 import { useEmplacementService } from '../../services/emplacementService';
 
 const { addVin } = useVinStore();
 const { fournisseurs } = useFournisseurService();
-const { producteurs } = useProducteurService();
 const { emplacements } = useEmplacementService();
 
 const vinTypes: VinType[] = ['Rouge', 'Blanc', 'Rosé', 'Effervescent', 'Liquoreux', 'Autre'];
@@ -119,7 +109,6 @@ const form = reactive<VinInput & { stock: number }>({
   millesime: new Date().getFullYear(),
   region: '',
   pays: '',
-  producteurId: undefined,
   fournisseurId: undefined,
   emplacementId: undefined,
   emplacementPrecision: '',
@@ -155,7 +144,6 @@ const handleSubmit = () => {
     notes: '',
     stock: 6,
     potentielGarde: '',
-    producteurId: undefined,
     fournisseurId: undefined,
     emplacementId: undefined,
     emplacementPrecision: '',
@@ -240,3 +228,5 @@ textarea {
   color: #34d399;
 }
 </style>
+
+

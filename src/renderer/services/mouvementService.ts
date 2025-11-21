@@ -63,6 +63,10 @@ function addMouvement(payload: MouvementInput) {
   return mouvement;
 }
 
+function removeMouvementsForVin(vinId: number) {
+  mouvements.value = mouvements.value.filter((mouvement) => mouvement.vinId !== vinId);
+}
+
 export function useMouvementService() {
   const mouvementTimeline = computed(() =>
     [...mouvements.value].sort(
@@ -89,5 +93,6 @@ export function useMouvementService() {
     mouvementsParVin,
     vinDictionary,
     addMouvement,
+    removeMouvementsForVin,
   };
 }

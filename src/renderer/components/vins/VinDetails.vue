@@ -17,10 +17,6 @@
         <h3>Informations générales</h3>
         <dl>
           <div>
-            <dt>Producteur</dt>
-            <dd>{{ producteurName }}</dd>
-          </div>
-          <div>
             <dt>Fournisseur</dt>
             <dd>{{ fournisseurName }}</dd>
           </div>
@@ -86,46 +82,34 @@ import { computed } from 'vue';
 import type { Vin } from '../../services/vinService';
 import { getMaturityStatus, type MaturityStatus } from '../../services/vinService';
 import { useFournisseurService } from '../../services/fournisseurService';
-import { useProducteurService } from '../../services/producteurService';
 import { useEmplacementService } from '../../services/emplacementService';
 
-const props = defineProps<{
-  vin?: Vin;
-}>();
+const props = defineProps<{ vin?: Vin }>();
 
 const { fournisseurs } = useFournisseurService();
-const { producteurs } = useProducteurService();
 const { emplacements } = useEmplacementService();
+
 const maturityStatus = computed<MaturityStatus>(() =>
   props.vin
     ? getMaturityStatus(props.vin)
-    : {
-        label: 'N/A',
-        detail: '',
-        level: 'upcoming',
-      },
+    : { label: 'N/A', detail: '', level: 'upcoming' },
 );
 
 const fournisseurName = computed(() => {
-  if (!props.vin?.fournisseurId) return '—';
-  return fournisseurs.value.find((f) => f.id === props.vin?.fournisseurId)?.nom ?? '—';
-});
-
-const producteurName = computed(() => {
-  if (!props.vin?.producteurId) return '—';
-  return producteurs.value.find((p) => p.id === props.vin?.producteurId)?.nom ?? '—';
+  if (!props.vin?.fournisseurId) return '-';
+  return fournisseurs.value.find((f) => f.id === props.vin?.fournisseurId)?.nom ?? '-';
 });
 
 const regionHeaderLabel = computed(() => {
   if (!props.vin?.region && !props.vin?.pays) {
-    return 'Région non renseignée';
+    return 'Region non renseignee';
   }
 
   if (props.vin?.region && props.vin?.pays) {
     return `${props.vin.region}, ${props.vin.pays}`;
   }
 
-  return props.vin?.region ?? props.vin?.pays ?? 'Région non renseignée';
+  return props.vin?.region ?? props.vin?.pays ?? 'Region non renseignee';
 });
 
 const regionFieldLabel = computed(() => props.vin?.region ?? 'N/A');
@@ -144,7 +128,7 @@ const emplacementLabel = computed(() => {
     return props.vin.emplacementPrecision;
   }
 
-  return `${base} · ${props.vin.emplacementPrecision}`;
+  return `${base} - ${props.vin.emplacementPrecision}`;
 });
 
 const formatDate = (value: string) =>
@@ -290,4 +274,9 @@ dd {
   border: 1px dashed #1e293b;
 }
 </style>
+
+
+
+
+
 

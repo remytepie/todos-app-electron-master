@@ -11,7 +11,10 @@
     <div class="entity-form__grid">
       <label>
         Nom *
-        <input v-model="form.nom" type="text" required />
+        <input v-model="form.nom" type="text" list="emplacement-noms" required />
+        <datalist id="emplacement-noms">
+          <option v-for="option in nomSuggestions" :key="option" :value="option" />
+        </datalist>
       </label>
       <label>
         Type
@@ -24,11 +27,17 @@
       </label>
       <label>
         Capacité (bt.)
-        <input v-model.number="form.capacite" type="number" min="0" />
+        <input v-model.number="form.capacite" type="number" min="0" list="capacite-suggestions" />
+        <datalist id="capacite-suggestions">
+          <option v-for="value in capaciteSuggestions" :key="value" :value="value" />
+        </datalist>
       </label>
       <label>
         Température
-        <input v-model="form.temperature" type="text" placeholder="12°C" />
+        <input v-model="form.temperature" type="text" placeholder="12°C" list="temperature-suggestions" />
+        <datalist id="temperature-suggestions">
+          <option v-for="value in temperatureSuggestions" :key="value" :value="value" />
+        </datalist>
       </label>
       <label>
         Humidité
@@ -49,9 +58,13 @@ import { useEmplacementService } from '../../services/emplacementService';
 
 const { addEmplacement } = useEmplacementService();
 
+const nomSuggestions = ['Cave principale', 'Armoire degustation', 'Reserve famille', 'Casier A', 'Casier B'];
+const capaciteSuggestions = [30, 60, 120, 240, 500];
+const temperatureSuggestions = ['10°C', '12°C', '14°C', '16°C'];
+
 const form = reactive({
   nom: '',
-  type: 'Cave',
+  type: 'Cave' as 'Cave' | 'Casier' | 'Armoire' | 'Autre',
   capacite: undefined as number | undefined,
   temperature: '',
   humidite: '',
@@ -62,7 +75,7 @@ const handleSubmit = () => {
   addEmplacement({ ...form });
   Object.assign(form, {
     nom: '',
-    type: 'Cave',
+    type: 'Cave' as 'Cave' | 'Casier' | 'Armoire' | 'Autre',
     capacite: undefined,
     temperature: '',
     humidite: '',

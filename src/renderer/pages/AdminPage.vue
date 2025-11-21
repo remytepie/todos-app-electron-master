@@ -14,17 +14,6 @@
 
       <section>
         <header>
-          <h2>Producteurs</h2>
-          <p>Gardez une trace des domaines partenaires.</p>
-        </header>
-        <div class="admin-page__grid">
-          <ProducteurForm />
-          <ProducteurList />
-        </div>
-      </section>
-
-      <section>
-        <header>
           <h2>Emplacements</h2>
           <p>Visualisez vos caves, casiers et armoires.</p>
         </header>
@@ -43,8 +32,6 @@
 <script lang="ts" setup>
 import FournisseurForm from '../components/fournisseurs/FournisseurForm.vue';
 import FournisseurList from '../components/fournisseurs/FournisseurList.vue';
-import ProducteurForm from '../components/producteurs/ProducteurForm.vue';
-import ProducteurList from '../components/producteurs/ProducteurList.vue';
 import EmplacementForm from '../components/emplacement/EmplacementForm.vue';
 import EmplacementList from '../components/emplacement/EmplacementList.vue';
 import { useAuth } from '../services/authService';

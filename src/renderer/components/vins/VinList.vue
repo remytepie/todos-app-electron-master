@@ -11,7 +11,7 @@
         <input
           v-model="search"
           type="search"
-          placeholder="Rechercher (nom, région, producteur)"
+          placeholder="Rechercher (nom, région, fournisseur)"
         />
         <select v-model="typeFilter">
           <option value="">Tous les styles</option>
@@ -124,3 +124,4 @@ const handleOpen = (vin: Vin) => {
   gap: 0.5rem;
 }
 </style>
+

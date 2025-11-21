@@ -10,7 +10,6 @@ export interface Vin {
   millesime?: number;
   region?: string;
   pays?: string;
-  producteurId?: number;
   fournisseurId?: number;
   emplacementId?: number;
   emplacementPrecision?: string;
@@ -28,7 +27,6 @@ export interface VinInput {
   millesime?: number;
   region?: string;
   pays?: string;
-  producteurId?: number;
   fournisseurId?: number;
   emplacementId?: number;
   emplacementPrecision?: string;
@@ -47,7 +45,6 @@ const vins = ref<Vin[]>([
     millesime: 2015,
     region: 'Bordeaux',
     pays: 'France',
-    producteurId: 1,
     fournisseurId: 1,
     emplacementId: 1,
     emplacementPrecision: 'Rangée A · Case 1',
@@ -65,7 +62,6 @@ const vins = ref<Vin[]>([
     millesime: 2018,
     region: 'Bourgogne',
     pays: 'France',
-    producteurId: 2,
     fournisseurId: 2,
     emplacementId: 2,
     emplacementPrecision: 'Colonne 2 · Niveau supérieur',
@@ -85,14 +81,13 @@ function mapTodoToVin(todo: Todo): Vin {
   return {
     id: todo.id ?? nextVinId++,
     nom: todo.title,
-    type: 'Rouge',
-    region: todo.region ?? undefined,
-    pays: undefined,
-    notes: todo.description ?? undefined,
-    producteurId: undefined,
-    fournisseurId: undefined,
-    emplacementId: undefined,
-    emplacementPrecision: undefined,
+  type: 'Rouge',
+  region: todo.region ?? undefined,
+  pays: undefined,
+  notes: todo.description ?? undefined,
+  fournisseurId: undefined,
+  emplacementId: undefined,
+  emplacementPrecision: undefined,
     tags: todo.tags ?? [],
     stock: todo.isFinished ? 0 : 6,
     prixMoyen: undefined,
@@ -127,13 +122,12 @@ function buildVin(payload: VinInput): Vin {
   return {
     id: nextVinId++,
     nom: payload.nom.trim(),
-    type: payload.type,
-    millesime: payload.millesime,
-    region: payload.region?.trim() || undefined,
-    pays: payload.pays?.trim() || undefined,
-    producteurId: payload.producteurId,
-    fournisseurId: payload.fournisseurId,
-    emplacementId: payload.emplacementId,
+  type: payload.type,
+  millesime: payload.millesime,
+  region: payload.region?.trim() || undefined,
+  pays: payload.pays?.trim() || undefined,
+  fournisseurId: payload.fournisseurId,
+  emplacementId: payload.emplacementId,
     emplacementPrecision: payload.emplacementPrecision?.trim() || undefined,
     notes: payload.notes?.trim() || undefined,
     tags: payload.tags?.map((tag) => tag.trim()).filter(Boolean) ?? [],
@@ -162,6 +156,12 @@ function updateVin(id: number, updates: Partial<Vin>) {
 
   vins.value.splice(index, 1, updated);
   return updated;
+}
+
+function deleteVin(id: number) {
+  const initialLength = vins.value.length;
+  vins.value = vins.value.filter((vin) => vin.id !== id);
+  return vins.value.length < initialLength;
 }
 
 function adjustStock(vinId: number, delta: number) {
@@ -200,6 +200,7 @@ export function useVinStore() {
     fetchVins: hydrateFromElectronTodos,
     addVin,
     updateVin,
+    deleteVin,
     adjustStock,
     getVinById: (id: number) => computed(() => vins.value.find((vin) => vin.id === id)),
   };

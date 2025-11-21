@@ -4,9 +4,27 @@ generator client {
   engineType = "client"
 }
 
+generator clientJs {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+enum VinType {
+  ROUGE
+  BLANC
+  ROSE
+  EFFERVESCENT
+  LIQUOREUX
+  AUTRE
+}
+
+enum MouvementType {
+  ENTREE
+  SORTIE
 }
 
 model todos {
@@ -32,4 +50,108 @@ model todo_tags {
 
   @@id([todo_id, tag_id])
   @@index([tag_id], map: "tag_id")
+}
+
+model Producteur {
+  id             Int     @id @default(autoincrement())
+  nom            String  @db.VarChar(191)
+  domaine        String? @db.VarChar(191)
+  region         String? @db.VarChar(191)
+  certification  String? @db.VarChar(191)
+  notes          String? @db.Text
+  vins           Vin[]
+
+  @@map("producteurs")
+}
+
+model Fournisseur {
+  id        Int     @id @default(autoincrement())
+  nom       String  @db.VarChar(191)
+  ville     String? @db.VarChar(191)
+  contact   String? @db.VarChar(191)
+  notes     String? @db.Text
+  vins      Vin[]
+  mouvements Mouvement[]
+
+  @@map("fournisseurs")
+}
+
+model Emplacement {
+  id         Int     @id @default(autoincrement())
+  libelle    String  @db.VarChar(191)
+  temperature Decimal? @db.Decimal(4, 1)
+  humidite   Decimal? @db.Decimal(4, 1)
+  notes      String? @db.Text
+  vins       Vin[]
+  mouvements Mouvement[]
+
+  @@map("emplacements")
+}
+
+model Vin {
+  id                    Int       @id @default(autoincrement())
+  nom                   String    @db.VarChar(191)
+  type                  VinType
+  millesime             Int?
+  region                String?   @db.VarChar(191)
+  pays                  String?   @db.VarChar(191)
+  producteur_id         Int?
+  fournisseur_id        Int?
+  emplacement_id        Int?
+  emplacement_precision String?   @db.VarChar(191)
+  notes                 String?   @db.Text
+  stock                 Int       @default(0)
+  prix_moyen            Decimal?  @db.Decimal(10, 2)
+  potentiel_garde       String?   @db.VarChar(191)
+  derniere_mise_a_jour  DateTime? @default(now()) @db.DateTime(0)
+
+  producteur Producteur?  @relation(fields: [producteur_id], references: [id])
+  fournisseur Fournisseur? @relation(fields: [fournisseur_id], references: [id])
+  emplacement Emplacement? @relation(fields: [emplacement_id], references: [id])
+  tags       VinTagAssignment[]
+  mouvements Mouvement[]
+
+  @@map("vins")
+  @@index([producteur_id])
+  @@index([fournisseur_id])
+  @@index([emplacement_id])
+}
+
+model VinTag {
+  id          Int                @id @default(autoincrement())
+  name        String             @unique @db.VarChar(191)
+  assignments VinTagAssignment[]
+
+  @@map("vin_tags")
+}
+
+model VinTagAssignment {
+  vin_id Int
+  tag_id Int
+  vin    Vin    @relation(fields: [vin_id], references: [id], onDelete: Cascade)
+  tag    VinTag @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([vin_id, tag_id])
+  @@map("vin_tag_assignments")
+  @@index([tag_id])
+}
+
+model Mouvement {
+  id             Int            @id @default(autoincrement())
+  vin_id         Int
+  type           MouvementType
+  quantite       Int
+  date           DateTime       @db.DateTime(0)
+  commentaire    String?        @db.Text
+  fournisseur_id Int?
+  emplacement_id Int?
+
+  vin         Vin         @relation(fields: [vin_id], references: [id], onDelete: Cascade)
+  fournisseur Fournisseur? @relation(fields: [fournisseur_id], references: [id])
+  emplacement Emplacement? @relation(fields: [emplacement_id], references: [id])
+
+  @@map("mouvements")
+  @@index([vin_id])
+  @@index([fournisseur_id])
+  @@index([emplacement_id])
 }
