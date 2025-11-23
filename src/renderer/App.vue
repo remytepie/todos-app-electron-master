@@ -12,8 +12,9 @@
       </div>
       <nav>
         <RouterLink to="/vins" exact-active-class="is-active">Vins</RouterLink>
-        <RouterLink to="/mouvements" exact-active-class="is-active">Mouvements</RouterLink>
+        <RouterLink v-if="isAdmin" to="/mouvements" exact-active-class="is-active">Mouvements</RouterLink>
         <RouterLink
+          v-if="isAdmin"
           to="/admin"
           exact-active-class="is-active"
           :class="{ 'is-disabled': !isAdmin }"
