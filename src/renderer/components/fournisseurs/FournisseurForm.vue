@@ -14,15 +14,11 @@
         <input v-model="form.nom" type="text" required />
       </label>
       <label>
-        Contact
+        Contact / Email
         <input v-model="form.contact" type="text" />
       </label>
       <label>
-        Email
-        <input v-model="form.email" type="email" />
-      </label>
-      <label>
-        Région
+        Ville
         <input v-model="form.region" type="text" />
       </label>
     </div>
@@ -43,7 +39,6 @@ const { addFournisseur } = useFournisseurService();
 const form = reactive({
   nom: '',
   contact: '',
-  email: '',
   region: '',
   notes: '',
 });
@@ -53,7 +48,6 @@ const handleSubmit = () => {
   Object.assign(form, {
     nom: '',
     contact: '',
-    email: '',
     region: '',
     notes: '',
   });

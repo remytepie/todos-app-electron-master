@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="entity-list">
     <header>
       <div>

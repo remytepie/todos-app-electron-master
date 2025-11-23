@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <form class="mouvement-form" @submit.prevent="handleSubmit">
     <header>
       <div>
@@ -69,10 +69,13 @@ const props = defineProps<{
   vinId?: number;
 }>();
 
-const { addMouvement } = useMouvementService();
+const { addMouvement, fetchMouvements } = useMouvementService();
 const { vins, fetchVins } = useVinStore();
 
-onMounted(fetchVins);
+onMounted(() => {
+  fetchVins();
+  fetchMouvements();
+});
 
 const today = new Date().toISOString().split('T')[0];
 
@@ -95,10 +98,10 @@ watch(
 
 const feedback = ref('');
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   if (!form.vinId) return;
 
-  addMouvement({
+  await addMouvement({
     vinId: form.vinId,
     type: form.type as 'ENTREE' | 'SORTIE',
     quantite: form.quantite,
@@ -106,7 +109,7 @@ const handleSubmit = () => {
     commentaire: form.commentaire,
   });
 
-  feedback.value = 'Mouvement enregistré ✅';
+  feedback.value = 'Mouvement enregistré !';
   form.quantite = 1;
   form.commentaire = '';
   form.date = today;

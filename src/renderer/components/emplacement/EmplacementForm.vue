@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <form class="entity-form" @submit.prevent="handleSubmit">
     <header>
       <div>

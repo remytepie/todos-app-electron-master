@@ -1,8 +1,8 @@
-<template>
+﻿<template>
   <section v-if="vin" class="vin-details">
     <header>
       <div>
-        <p class="vin-details__eyebrow">{{ vin.type }} • {{ vin.millesime ?? 'N/A' }}</p>
+        <p class="vin-details__eyebrow">{{ vin.type }} · {{ vin.millesime ?? 'N/A' }}</p>
         <h1>{{ vin.nom }}</h1>
         <p class="vin-details__region">{{ regionHeaderLabel }}</p>
       </div>
@@ -25,7 +25,7 @@
             <dd>{{ emplacementLabel }}</dd>
           </div>
           <div>
-            <dt>Maturit�</dt>
+            <dt>Maturité</dt>
             <dd class="vin-details__maturity">
               <span
                 :class="[
@@ -60,7 +60,7 @@
       <article class="vin-details__panel">
         <h3>Notes & tags</h3>
         <p v-if="vin.notes">{{ vin.notes }}</p>
-        <p v-else class="vin-details__muted">Aucune note pour l’instant.</p>
+        <p v-else class="vin-details__muted">Aucune note pour l'instant.</p>
         <ul v-if="vin.tags.length" class="vin-details__tags">
           <li v-for="tag in vin.tags" :key="tag">{{ tag }}</li>
         </ul>
@@ -98,14 +98,14 @@ const fournisseurName = computed(() => {
 
 const regionHeaderLabel = computed(() => {
   if (!props.vin?.region && !props.vin?.pays) {
-    return 'Region non renseignee';
+    return 'Région non renseignée';
   }
 
   if (props.vin?.region && props.vin?.pays) {
     return `${props.vin.region}, ${props.vin.pays}`;
   }
 
-  return props.vin?.region ?? props.vin?.pays ?? 'Region non renseignee';
+  return props.vin?.region ?? props.vin?.pays ?? 'Région non renseignée';
 });
 
 const regionFieldLabel = computed(() => props.vin?.region ?? 'N/A');
@@ -120,15 +120,13 @@ const emplacementLabel = computed(() => {
     return base;
   }
 
-  if (base === 'N/A') {
-    return props.vin.emplacementPrecision;
-  }
-
-  return `${base} - ${props.vin.emplacementPrecision}`;
+  return `${base} (${props.vin.emplacementPrecision})`;
 });
 
-const formatDate = (value: string) =>
-  new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }).format(new Date(value));
+const formatDate = (value?: string | null) =>
+  value
+    ? new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' }).format(new Date(value))
+    : 'N/A';
 </script>
 
 <style scoped>
@@ -136,106 +134,113 @@ const formatDate = (value: string) =>
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  padding: 2rem;
-  border-radius: 1.5rem;
-  background: #0f172a;
-  border: 1px solid #1e293b;
 }
 
 header {
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .vin-details__eyebrow {
   text-transform: uppercase;
-  font-size: 0.8rem;
+  letter-spacing: 0.1em;
   color: #94a3b8;
-  letter-spacing: 0.2em;
+  font-size: 0.85rem;
 }
 
 .vin-details__region {
-  color: #a5b4fc;
+  margin: 0.25rem 0 0;
+  color: #94a3b8;
 }
 
 .vin-details__stock {
-  background: #1d283a;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  padding: 0.75rem 1.25rem;
   border-radius: 1rem;
-  padding: 1rem 1.5rem;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
 }
 
 .vin-details__stock span {
-  font-size: 2.5rem;
+  font-size: 1.8rem;
   font-weight: 700;
-  display: block;
-  line-height: 1;
+}
+
+.vin-details__stock small {
+  color: #94a3b8;
 }
 
 .vin-details__layout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
 .vin-details__panel {
-  background: #020617;
-  border-radius: 1.25rem;
-  padding: 1.25rem;
   border: 1px solid #1e293b;
+  border-radius: 1rem;
+  padding: 1rem;
+  background: #0b1221;
 }
 
 dl {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 1rem;
+  gap: 0.75rem;
   margin: 0;
 }
 
-dt {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #475569;
+dl div {
+  display: grid;
+  grid-template-columns: auto;
+  gap: 0.25rem;
 }
 
+.dt,
+dt {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.dd,
 dd {
-  margin: 0.25rem 0 0;
-  font-weight: 600;
+  margin: 0;
 }
 
 .vin-details__maturity {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.35rem;
 }
 
 .vin-details__maturity small {
   color: #94a3b8;
-  font-size: 0.8rem;
-  font-weight: 400;
 }
 
 .vin-details__maturity-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
   border-radius: 999px;
-  padding: 0.2rem 0.8rem;
-  font-size: 0.85rem;
   font-weight: 600;
-}
-
-.vin-details__maturity-pill--upcoming {
-  background: rgba(251, 191, 36, 0.15);
-  color: #fbbf24;
+  font-size: 0.85rem;
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
 }
 
 .vin-details__maturity-pill--optimal {
-  background: rgba(52, 211, 153, 0.15);
-  color: #34d399;
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+}
+
+.vin-details__maturity-pill--upcoming {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
 }
 
 .vin-details__maturity-pill--late {
@@ -244,34 +249,32 @@ dd {
 }
 
 .vin-details__muted {
-  color: #64748b;
+  color: #94a3b8;
 }
 
 .vin-details__tags {
   display: flex;
+  gap: 0.35rem;
   flex-wrap: wrap;
-  gap: 0.5rem;
   list-style: none;
   padding: 0;
+  margin: 0.75rem 0 0;
 }
 
 .vin-details__tags li {
-  background: rgba(129, 140, 248, 0.15);
-  border: 1px solid rgba(129, 140, 248, 0.3);
-  padding: 0.25rem 0.8rem;
-  border-radius: 9999px;
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5f5;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
 }
 
 .vin-details__placeholder {
+  border: 1px solid #1e293b;
+  border-radius: 1rem;
   padding: 2rem;
   text-align: center;
-  border-radius: 1rem;
-  background: #0f172a;
-  border: 1px dashed #1e293b;
+  color: #cbd5f5;
+  background: #0b1221;
 }
 </style>
-
-
-
-
-

@@ -1,12 +1,12 @@
-<template>
+﻿<template>
   <div class="admin-page">
     <template v-if="isAdmin">
       <section>
         <header>
           <h2>Fournisseurs</h2>
-          <p>Centralisez vos contacts d’approvisionnement.</p>
+          <p>Centralisez vos contacts d'approvisionnement.</p>
         </header>
-        <div class="admin-page__grid">
+        <div class="admin-page__grid admin-page__grid--fournisseurs">
           <FournisseurForm />
           <FournisseurList />
         </div>
@@ -65,6 +65,10 @@ header p {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 1rem;
+}
+
+.admin-page__grid--fournisseurs {
+  grid-template-columns: 1fr;
 }
 
 .admin-page__restricted {

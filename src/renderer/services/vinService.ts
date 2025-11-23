@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue';
+﻿import { computed, ref } from 'vue';
 import { VinRecord, VinTypeDb } from 'src/shared/vin';
 
 export type VinType = 'Rouge' | 'Blanc' | 'Rose' | 'Effervescent' | 'Liquoreux' | 'Autre';
@@ -72,12 +72,12 @@ function assertVinPayload(
   if (payload.millesime !== undefined) {
     const year = payload.millesime;
     if (Number.isNaN(year) || year < 1900 || year > 2100) {
-      throw new Error('Millésime invalide');
+      throw new Error('Millesime invalide');
     }
   }
 
   if (payload.stock !== undefined && payload.stock < 0) {
-    throw new Error('Le stock doit être positif');
+    throw new Error('Le stock doit etre positif');
   }
 }
 
