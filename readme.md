@@ -129,4 +129,4 @@ SHOW TABLES;
 
 ## Auteur
 
-Remy — Application de gestion de cave sous licence MIT.
+Remy — Application de gestion de cave à vin.
