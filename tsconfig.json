@@ -8,6 +8,11 @@
     "noImplicitAny": true,
     "sourceMap": true,
     "baseUrl": ".",
+    "paths": {
+      "src/*": [
+        "src/*"
+      ]
+    },
     "outDir": "dist",
     "moduleResolution": "nodenext",
     "resolveJsonModule": true
